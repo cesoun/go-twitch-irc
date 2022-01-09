@@ -696,18 +696,19 @@ func (c *Client) Connect() error {
 	}
 
 	var dialer *net.Dialer
+	var pDialer proxy.Dialer
+	var err error
+
 	netDialer := &net.Dialer{KeepAlive: time.Second * 10}
 
 	if c.Proxy != nil {
 		address := fmt.Sprintf("%s:%d", c.Proxy.Address, c.Proxy.Ports.Socks5)
 
 		// We could supply auth via Proxy.Username, Proxy.Password
-		pDialer, err := proxy.SOCKS5("tcp", address, nil, netDialer)
+		pDialer, err = proxy.SOCKS5("tcp", address, nil, netDialer)
 		if err != nil {
 			return err
 		}
-
-		dialer = pDialer.(*net.Dialer)
 	} else {
 		dialer = netDialer
 	}
@@ -726,7 +727,12 @@ func (c *Client) Connect() error {
 	}
 
 	for {
-		err := c.makeConnection(dialer, conf)
+		var err error
+		if c.Proxy != nil {
+			err = c.makeProxyConnection(pDialer, conf)
+		} else {
+			err = c.makeConnection(dialer, conf)
+		}
 
 		switch err {
 		case errReconnect:
@@ -736,6 +742,51 @@ func (c *Client) Connect() error {
 			return err
 		}
 	}
+}
+
+func (c *Client) makeProxyConnection(dialer proxy.Dialer, conf *tls.Config) (err error) {
+	c.connActive.set(false)
+	var conn net.Conn
+
+	conn, err = dialer.Dial("tcp", c.IrcAddress)
+	if err != nil {
+		return err
+	}
+
+	wg := sync.WaitGroup{}
+	c.clientReconnect.Reset()
+	c.userDisconnect.Reset()
+
+	wg.Add(1)
+	go c.startReader(conn, &wg)
+
+	if c.SendPings {
+		// If SendPings is true (which it is by default), start the thread
+		// responsible for managing sending pings and reading pongs
+		// in a separate go-routine
+		wg.Add(1)
+		c.startPinger(conn, &wg)
+	}
+
+	// Send the initial connection messages (like logging in, getting the CAP REQ stuff)
+	c.setupConnection(conn)
+
+	// Start the connection writer in a separate go-routine
+	wg.Add(1)
+	go c.startWriter(conn, &wg)
+
+	// start the parser in the same go-routine as makeConnection was called from
+	// the error returned from parser will be forwarded to the caller of makeConnection
+	// and that error will decide whether or not to reconnect
+	err = c.startParser()
+
+	conn.Close()
+	c.clientReconnect.Close()
+
+	// Wait for the reader, pinger, and writer to close
+	wg.Wait()
+
+	return
 }
 
 func (c *Client) makeConnection(dialer *net.Dialer, conf *tls.Config) (err error) {
