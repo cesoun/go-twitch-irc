@@ -1,4 +1,4 @@
-module github.com/gempir/go-twitch-irc/v2
+module github.com/cesoun/go-twitch-irc
 
 go 1.12
 
