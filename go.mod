@@ -1,4 +1,4 @@
-module github.com/cesoun/go-twitch-irc
+module github.com/cesoun/go-twitch-irc/v3
 
 go 1.12
 
