@@ -78,7 +78,7 @@ func postMessagesOnConnect(messages []string) func(conn net.Conn) {
 }
 
 func newTestClient(host string) *Client {
-	client := NewClient("justinfan123123", "oauth:123123132")
+	client := NewClient("justinfan123123", "oauth:123123132", nil)
 	client.IrcAddress = host
 
 	return client
@@ -276,7 +276,7 @@ func TestCanConnectAndAuthenticateWithoutTLS(t *testing.T) {
 		}
 	})
 
-	client := NewClient("justinfan123123", oauthCode)
+	client := NewClient("justinfan123123", oauthCode, nil)
 	client.TLS = false
 	client.IrcAddress = host
 	client.PongTimeout = time.Second * 30
@@ -305,7 +305,7 @@ func TestCanChangeOauthToken(t *testing.T) {
 		}
 	})
 
-	client := NewClient("justinfan123123", "wrongoauthcodelol")
+	client := NewClient("justinfan123123", "wrongoauthcodelol", nil)
 	client.TLS = false
 	client.IrcAddress = host
 	client.SetIRCToken(oauthCode)
@@ -335,7 +335,7 @@ func TestCanAddSetupCmd(t *testing.T) {
 		}
 	})
 
-	client := NewClient("justinfan123123", oauthCode)
+	client := NewClient("justinfan123123", oauthCode, nil)
 	client.TLS = false
 	client.IrcAddress = host
 	client.SetupCmd = setupCmd
@@ -352,7 +352,7 @@ func TestCanAddSetupCmd(t *testing.T) {
 
 func TestCanCreateClient(t *testing.T) {
 	t.Parallel()
-	client := NewClient("justinfan123123", "oauth:1123123")
+	client := NewClient("justinfan123123", "oauth:1123123", nil)
 
 	if reflect.TypeOf(client) != reflect.TypeOf(&Client{}) {
 		t.Error("client is not of type Client")
@@ -504,7 +504,7 @@ func TestCanDisconnect(t *testing.T) {
 
 func TestCanNotDisconnectOnClosedConnection(t *testing.T) {
 	t.Parallel()
-	client := NewClient("justinfan123123", "oauth:123123132")
+	client := NewClient("justinfan123123", "oauth:123123132", nil)
 
 	err := client.Disconnect()
 
@@ -1628,7 +1628,7 @@ func TestCanPong(t *testing.T) {
 
 func TestCanNotDialInvalidAddress(t *testing.T) {
 	t.Parallel()
-	client := NewClient("justinfan123123", "oauth:123123132")
+	client := NewClient("justinfan123123", "oauth:123123132", nil)
 	client.IrcAddress = "127.0.0.1:123123123123"
 
 	err := client.Connect()
@@ -1640,7 +1640,7 @@ func TestCanNotDialInvalidAddress(t *testing.T) {
 func TestCanNotUseImproperlyFormattedOauthPENIS(t *testing.T) {
 	t.Parallel()
 	host := startServer(t, nothingOnConnect, nothingOnMessage)
-	client := NewClient("justinfan123123", "imrpproperlyformattedoauth")
+	client := NewClient("justinfan123123", "imrpproperlyformattedoauth", nil)
 	client.IrcAddress = host
 
 	err := client.Connect()
@@ -1652,7 +1652,7 @@ func TestCanNotUseImproperlyFormattedOauthPENIS(t *testing.T) {
 func TestCanNotUseWrongOauthPENIS123(t *testing.T) {
 	t.Parallel()
 	host := startServer(t, nothingOnConnect, nothingOnMessage)
-	client := NewClient("justinfan123123", "oauth:wrong")
+	client := NewClient("justinfan123123", "oauth:wrong", nil)
 	client.IrcAddress = host
 
 	err := client.Connect()
@@ -1663,7 +1663,7 @@ func TestCanNotUseWrongOauthPENIS123(t *testing.T) {
 
 func TestCanConnectToTwitch(t *testing.T) {
 	t.Parallel()
-	client := NewClient("justinfan123123", "oauth:123123132")
+	client := NewClient("justinfan123123", "oauth:123123132", nil)
 
 	client.OnConnect(func() {
 		client.Disconnect()
@@ -1675,7 +1675,7 @@ func TestCanConnectToTwitch(t *testing.T) {
 
 func TestCanConnectToTwitchWithoutTLS(t *testing.T) {
 	t.Parallel()
-	client := NewClient("justinfan123123", "oauth:123123132")
+	client := NewClient("justinfan123123", "oauth:123123132", nil)
 	client.TLS = false
 	wait := make(chan struct{})
 
@@ -1698,7 +1698,7 @@ func TestCanConnectToTwitchWithoutTLS(t *testing.T) {
 
 func TestCanHandleInvalidNick(t *testing.T) {
 	t.Parallel()
-	client := NewClient("", "")
+	client := NewClient("", "", nil)
 	client.TLS = false
 	wait := make(chan struct{})
 

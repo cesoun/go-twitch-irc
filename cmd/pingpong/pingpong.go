@@ -13,7 +13,7 @@ const (
 )
 
 func main() {
-	client := twitch.NewClient(clientUsername, clientAuthenticationToken)
+	client := twitch.NewClient(clientUsername, clientAuthenticationToken, nil)
 
 	client.OnPrivateMessage(func(message twitch.PrivateMessage) {
 		if strings.Contains(strings.ToLower(message.Message), "ping") {

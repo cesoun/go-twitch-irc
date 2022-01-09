@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"golang.org/x/net/proxy"
 	"io"
 	"net"
 	"net/textproto"
@@ -429,10 +430,13 @@ type Client struct {
 
 	// The ratelimits the client will respect when sending messages
 	rateLimiter *RateLimiter
+
+	// The Proxy the client is using
+	Proxy *Proxy
 }
 
 // NewClient to create a new client
-func NewClient(username, oauth string) *Client {
+func NewClient(username, oauth string, proxy *Proxy) *Client {
 	return &Client{
 		ircUser:         username,
 		ircToken:        oauth,
@@ -455,13 +459,15 @@ func NewClient(username, oauth string) *Client {
 		Capabilities: DefaultCapabilities,
 
 		rateLimiter: CreateDefaultRateLimiter(),
+
+		Proxy: proxy,
 	}
 }
 
 // NewAnonymousClient to create a new client without login requirements (anonymous user)
 // Do note that the Say and Whisper functions will be ineffectual when using this constructor
 func NewAnonymousClient() *Client {
-	return NewClient("justinfan123123", "oauth:59301")
+	return NewClient("justinfan123123", "oauth:59301", nil)
 }
 
 // OnConnect attach callback to when a connection has been established
@@ -689,8 +695,21 @@ func (c *Client) Connect() error {
 		c.IrcAddress = ircTwitch
 	}
 
-	dialer := &net.Dialer{
-		KeepAlive: time.Second * 10,
+	var dialer *net.Dialer
+	netDialer := &net.Dialer{KeepAlive: time.Second * 10}
+
+	if c.Proxy != nil {
+		address := fmt.Sprintf("%s:%d", c.Proxy.Address, c.Proxy.Ports.Socks5)
+
+		// We could supply auth via Proxy.Username, Proxy.Password
+		pDialer, err := proxy.SOCKS5("tcp", address, nil, netDialer)
+		if err != nil {
+			return err
+		}
+
+		dialer = pDialer.(*net.Dialer)
+	} else {
+		dialer = netDialer
 	}
 
 	var conf *tls.Config
