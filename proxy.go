@@ -51,8 +51,8 @@ type List struct {
 
 // ListFromAPI collects the Proxy list and the replacement info
 func ListFromAPI() (*List, error) {
-	listURL := "https://Proxy.webshare.io/api/proxy/list/"
-	replacementURL := "https://Proxy.webshare.io/api/proxy/replacement/info/"
+	listURL := "https://proxy.webshare.io/api/proxy/list/"
+	replacementURL := "https://proxy.webshare.io/api/proxy/replacement/info/"
 
 	// wrapper for Proxy results
 	results := struct {
